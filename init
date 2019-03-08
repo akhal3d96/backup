@@ -2,3 +2,6 @@
 set -e
 REPO="$HOME/.backup"
 borg init --encryption=none ${REPO}
+
+sudo cp backup.service /usr/lib/systemd/user
+sudo cp backup.timer /usr/lib/systemd/user
