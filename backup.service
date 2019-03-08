@@ -1,0 +1,10 @@
+[Unit]
+Description=A service which launches the backup script for this machine
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart="%h/bin/backup"
+
+[Install]
+WantedBy=multi-user.target

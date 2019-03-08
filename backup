@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -e
+
+trap "echo $(date) Backup interrupted >&2; exit 2" INT TERM
+
+cd $HOME
+
+FILES=(.gnupg .ssh)
+REPO="$HOME/.backup"
+BACKUP="$(whoami)@$(hostname)-$(date +%F)"
+
+echo "=> Starting backup"
+borg create --stats --progress --compression lz4 ${REPO}::${BACKUP} ${FILES[*]}
+printf "===\n\n"
+
+echo "=> Pruning repository"
+borg prune --prefix "$(whoami)@$(hostname)-" --keep-weekly 1 --keep-monthly 6 "${REPO}"
+printf "===\n\n"
+
+echo "=> Uploading to Google Drive"
+rclone sync ${REPO} googledrive:backup/
+printf "===\n\n"
+
+echo "=> Uploading to Dropbox"
+rclone sync ${REPO} dropbox:backup/
+printf "===\n\n"
+
+echo "Backup done."

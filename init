@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -e
+REPO="$HOME/.backup"
+borg init --encryption=none ${REPO}
