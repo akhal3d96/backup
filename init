@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
-set -e
+
+echo "=> Create repository"
 REPO="$HOME/.backup"
 borg init --encryption=none ${REPO}
 
+echo "=> Copy systemd unit files"
 sudo cp backup.service /usr/lib/systemd/user
 sudo cp backup.timer /usr/lib/systemd/user
+
+echo "=> Reload systemd unit files"
+sudo systemctl daemon-reload
+
+echo "=> Enable the backup timer"
+systemctl --user enable backup.timer
