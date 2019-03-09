@@ -7,4 +7,4 @@ Type=oneshot
 ExecStart="%h/bin/backup"
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
