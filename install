@@ -4,6 +4,10 @@ echo "=> Create repository"
 REPO="$HOME/.backup"
 borg init --encryption=none ${REPO}
 
+echo "=> Copy backup script"
+sudo cp ./backup /usr/local/bin
+
+
 echo "=> Copy systemd unit files"
 sudo cp backup.service /usr/lib/systemd/user
 sudo cp backup.timer /usr/lib/systemd/user
