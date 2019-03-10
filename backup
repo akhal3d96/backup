@@ -10,6 +10,7 @@ REPO="$HOME/.backup"
 BACKUP="$(whoami)@$(hostname)-$(date +%F)"
 
 echo "=> Starting backup"
+export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
 borg create --stats --progress --compression lz4 ${REPO}::${BACKUP} ${FILES[*]}
 printf "===\n\n"
 
