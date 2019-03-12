@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 
-echo "=> Create repository"
 REPO="$HOME/.backup"
+BIN_PATH=/usr/local/bin/backup
+SERICE_PATH=/usr/lib/systemd/user
+
+echo "=> Create repository"
 borg init --encryption=none ${REPO}
 
 echo "=> Copy backup script"
-sudo cp ./backup /usr/local/bin
+sudo cp -u ./backup $BIN_PATH
 
+echo "=> Setting permissions"
+sudo chmod u+x $BIN_PATH
 
 echo "=> Copy systemd unit files"
-sudo cp backup.service /usr/lib/systemd/user
-sudo cp backup.timer /usr/lib/systemd/user
+sudo cp -u backup.service $SERICE_PATH
+sudo cp -u backup.timer $SERICE_PATH
 
 echo "=> Reload systemd unit files"
 sudo systemctl daemon-reload
