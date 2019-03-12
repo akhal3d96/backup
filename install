@@ -18,7 +18,7 @@ sudo cp -u backup.service $SERICE_PATH
 sudo cp -u backup.timer $SERICE_PATH
 
 echo "=> Reload systemd unit files"
-sudo systemctl daemon-reload
+systemctl --user daemon-reload
 
 echo "=> Enable the backup timer"
 systemctl --user enable backup.timer
