@@ -1,6 +1,7 @@
 [Unit]
 Description=A service which launches the backup script for this machine
 After=network.target
+OnFailure=status-email@%n.service
 
 [Service]
 Type=oneshot
