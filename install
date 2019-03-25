@@ -4,6 +4,28 @@ REPO="$HOME/.backup"
 BIN_PATH=/usr/local/bin/backup
 SERICE_PATH=/usr/lib/systemd/user
 
+echo -n "=> Check if systemd exists..."
+pidof systemd &> /dev/null
+if [ $? -eq 0 ]; then
+    echo "Yes"
+else
+    echo "No"
+fi
+
+echo -n "=> Check if borg exists..."
+if [ -f "/usr/bin/borg" ]; then
+    echo "Yes"
+else
+    echo "No"
+fi
+
+echo -n "=> Check if rclone exists..."
+if [ -f "/usr/bin/rclone" ]; then
+    echo "Yes"
+else
+    echo "No"
+fi
+
 echo "=> Create repository"
 borg init --encryption=none ${REPO}
 
