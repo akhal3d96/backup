@@ -5,25 +5,35 @@ trap "echo $(date) Backup interrupted >&2; exit 2" INT TERM
 
 cd $HOME
 
-FILES=(.gnupg .ssh)
+FILES=(.gnupg .ssh Dev/configurations Documents/lmms .zshrc .aws notes.txt)
 REPO="$HOME/.backup"
 BACKUP="$(whoami)@$(hostname)-$(date +%F)"
+RCLONE_BACKENDS=(googledrive dropbox)
 
 echo "=> Starting backup"
 export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
-borg create --stats --progress --compression lz4 ${REPO}::${BACKUP} ${FILES[*]}
-printf "===\n\n"
+
+borg create --stats \
+            --show-rc \
+            --compression lz4 \
+            ${REPO}::${BACKUP} ${FILES[*]}
+
+echo -n "===\n\n"
 
 echo "=> Pruning repository"
-borg prune --prefix "$(whoami)@$(hostname)-" --keep-weekly 1 --keep-monthly 6 "${REPO}"
-printf "===\n\n"
 
-echo "=> Uploading to Google Drive"
-rclone sync ${REPO} googledrive:backup/
-printf "===\n\n"
+borg prune --prefix "$(whoami)@$(hostname)-" \
+            --keep-weekly 3 \
+            --keep-monthly 6 \
+            "${REPO}"
 
-echo "=> Uploading to Dropbox"
-rclone sync ${REPO} dropbox:backup/
-printf "===\n\n"
+echo -n "===\n\n"
+
+for backend in "${RCLONE_BACKENDS[@]}"
+do
+    echo "=> Uploading to ${backend}"
+    rclone sync ${REPO} "${backend}":backup/
+    echo -n "===\n\n"
+done
 
 echo "Backup done."
