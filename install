@@ -4,6 +4,7 @@ REPO="$HOME/.backup"
 BIN_PATH=/usr/local/bin/backup
 SERICE_PATH=/usr/lib/systemd/user
 
+# Check requirements
 echo -n "=> Check if systemd exists..."
 pidof systemd &> /dev/null
 if [ $? -eq 0 ]; then
@@ -26,6 +27,28 @@ else
     echo "No"
 fi
 
+# Configuration directory and file
+echo "=> Check configuration"
+if [ ! -z $XDG_CONFIG_HOME ]; then
+    CONFIG_DIR="$XDG_CONFIG_HOME/backup"
+else
+    CONFIG_DIR="${HOME}/.config/backup"
+fi
+
+if [ ! -d "${CONFIG_DIR}" ]; then
+    mkdir ${CONFIG_DIR}
+fi
+
+if [ ! -f "$CONFIG_DIR/backuprc" ]; then
+    echo "${CONFIG_DIR}" > "$CONFIG_DIR/backuprc"
+    echo "=========="
+    echo
+    echo "Edit $CONFIG_DIR/backuprc to add the directories and files to be backed up"
+    echo
+    echo "=========="
+fi
+
+# Install the script
 echo "=> Create repository"
 borg init --encryption=none ${REPO}
 
