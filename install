@@ -1,8 +1,18 @@
-#!/usr/bin/env bash
+#! /usr/bin/bash
 
-REPO="$HOME/.backup"
+trap "echo $(date) install interrupted >&2; exit 2" INT TERM
+
+BORG_REPO_LOCATION="$HOME/.backup"
 BIN_PATH=/usr/local/bin/backup
-SERICE_PATH=/usr/lib/systemd/user
+SYSTEMD_SERVICE_PATH=/usr/lib/systemd/user
+
+# Helper functions
+change_line () {
+    sed -i "/^$1/c\\$2" $3
+}
+
+# prologue
+cp backup backup.default
 
 # Check requirements
 echo -n "=> Check if systemd exists..."
@@ -27,10 +37,38 @@ else
     echo "No"
 fi
 
+# Configure the script settings
+auto=false
+while :; do
+    case $1 in
+        -a|--auto) auto=true                     
+        ;;
+        *) break
+    esac
+    shift
+done
+
+if [ "${auto}"  = false ]; then
+    # Borg Backup location
+    read -p "Borg backup location (default \"${BORG_REPO_LOCATION}\" ): " ${_BORG_REPO_LOCATION}
+    # Borg backup names
+    read -p "Borg backup location (default \`\$(whoami)@\$(hostname)-\$(date +%F)\`): " ${_BORG_NAME}
+    # RCLONE Remote Backends
+    read -p "rclone remote backends (default all rclone authorized backends): " ${_RCLONE_BACKENDS}
+    
+    if [ -n "${_BORG_REPO_LOCATION}" ]; then
+        change_line "BORG_REPO_LOCATION" "BORG_REPO_LOCATION=${_BORG_REPO_LOCATION}" backup
+    elif [ -n "${_BORG_NAME}" ]; then
+        change_line "BORG_NAME" "BORG_NAME=${_BORG_NAME}" backup
+    elif [ -n "${_RCLONE_BACKENDS}" ]; then
+        change_line "RCLONE_BACKENDS" "RCLONE_BACKENDS=${_RCLONE_BACKENDS}" backup
+    fi
+fi
+
 # Configuration directory and file
 echo "=> Check configuration"
-if [ ! -z $XDG_CONFIG_HOME ]; then
-    CONFIG_DIR="$XDG_CONFIG_HOME/backup"
+if [ -n "${XDG_CONFIG_HOME}" ]; then
+    CONFIG_DIR="${XDG_CONFIG_HOME}/backup"
 else
     CONFIG_DIR="${HOME}/.config/backup"
 fi
@@ -39,31 +77,35 @@ if [ ! -d "${CONFIG_DIR}" ]; then
     mkdir ${CONFIG_DIR}
 fi
 
-if [ ! -f "$CONFIG_DIR/backuprc" ]; then
-    echo "${CONFIG_DIR}" > "$CONFIG_DIR/backuprc"
+if [ ! -f "${CONFIG_DIR}/backuprc" ]; then
+    echo "${CONFIG_DIR}" > "${CONFIG_DIR}/backuprc"
     echo "=========="
     echo
-    echo "Edit $CONFIG_DIR/backuprc to add the directories and files to be backed up"
+    echo "Edit ${CONFIG_DIR}/backuprc to add the directories and files to be backed up"
     echo
     echo "=========="
 fi
 
 # Install the script
 echo "=> Create repository"
-borg init --encryption=none ${REPO}
+borg init --encryption=none ${BORG_REPO_LOCATION}
 
 echo "=> Copy backup script"
-sudo cp -u ./backup $BIN_PATH
+sudo cp -u ./backup ${BIN_PATH}
 
 echo "=> Setting permissions"
-sudo chmod u+x $BIN_PATH
+sudo chmod u+x ${BIN_PATH}
 
 echo "=> Copy systemd unit files"
-sudo cp -u backup.service $SERICE_PATH
-sudo cp -u backup.timer $SERICE_PATH
+sudo cp -u backup.service ${SYSTEMD_SERVICE_PATH}
+sudo cp -u backup.timer ${SYSTEMD_SERVICE_PATH}
 
 echo "=> Reload systemd unit files"
 systemctl --user daemon-reload
 
 echo "=> Enable the backup timer"
 systemctl --user enable backup.timer
+
+
+# epilogue
+mv backup.default backup
