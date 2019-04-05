@@ -1,0 +1,28 @@
+#! /usr/bin/bash
+
+BIN_PATH=/usr/local/bin/backup
+SYSTEMD_SERVICE_PATH=/usr/lib/systemd/user
+BORG_REPO_LOCATION="$HOME/.backup"
+
+while :; do
+    case $1 in
+        --purge) borg delete "${BORG_REPO_LOCATION}"                     
+        ;;
+        *) break
+    esac
+    shift
+done
+
+echo "=> Remove backup script"
+sudo rm ${BIN_PATH}
+
+echo "=> Disable the backup timer"
+systemctl --user disable backup.timer
+
+echo "=> Remove systemd unit files"
+sudo rm "${SYSTEMD_SERVICE_PATH}/backup.service"
+sudo rm "${SYSTEMD_SERVICE_PATH}/backup.timer"
+
+echo "=> Reload systemd unit files"
+systemctl --user daemon-reload
+
