@@ -5,10 +5,18 @@ jobs:
       - image: debian:stretch
 
     steps:
-      - checkout
       - run:
           name: Install dependencies
-          command: apt-get install -y borgbackup rclone
+          command: |
+              apt-get update &&\
+              apt-get install -y git systemd borgbackup rclone curl &&\
+              mkdir -p "$HOME/.config/backup/" &&\
+              echo "$HOME" > "$HOME/.config/backup/backuprc"
+      - checkout
+      - run:
+          name: Configuring dependencies
+          command: |
+            sed -i 's/sudo//g' install uninstall
       - run:
           name: Test install script
           command: bash -x install -a
@@ -16,7 +24,3 @@ jobs:
       - run:
           name: Test backup script 
           command: bash -x backup
-      
-      - run:
-          name: Test sh compatibility
-          command: sh -n backup install uninstall

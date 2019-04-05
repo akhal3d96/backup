@@ -1,17 +1,34 @@
-#!/usr/bin/env bash
+#! /usr/bin/bash
 
 set -e
-trap "echo $(date) Backup interrupted >&2; exit 2" INT TERM
-cd $HOME
+trap "echo $(date) backup interrupted >&2; exit 2" INT TERM
+cd "${HOME}"
+
+# --debug|-d option for debugging
+while :; do
+    case $1 in
+        -d|--debug) debug=true                     
+        ;;
+        *) break
+    esac
+    shift
+done
+
+if [ "${debug}"  = true ]
+then
+    borg () { echo borg "$@"; }
+    rclone () { echo rclone "$@"; }
+fi
+
 
 
 # Backup local location
-BORG_REPO_NAME="$HOME/.backup"
+BORG_REPO_LOCATION="$HOME/.backup"
 
 
 
 # Directories and files to be backed up
-if [ ! -z $XDG_CONFIG_HOME ]; then
+if [ -n "$XDG_CONFIG_HOME" ]; then
     CONFIG_DIR="$XDG_CONFIG_HOME/backup"
 else
     CONFIG_DIR="${HOME}/.config/backup"
@@ -38,19 +55,19 @@ echo "=> Starting backup"
 BORG_UNKNOWN_UNENCRYPTED_BORG_REPO_NAME_ACCESS_IS_OK=yes borg create --stats \
             --show-rc \
             --compression lz4 \
-            ${BORG_REPO_NAME}::${BORG_BACKUP_NAME} "${BORG_FILES[@]}"
+            ${BORG_REPO_LOCATION}::${BORG_BACKUP_NAME} "${BORG_FILES[@]}"
 echo
 
 echo "=> Pruning repository"
 borg prune --prefix "$(whoami)@$(hostname)-" \
             --keep-weekly 3 \
             --keep-monthly 6 \
-            "${BORG_REPO_NAME}"
+            "${BORG_REPO_LOCATION}"
 echo
 
 while read -r backend; do
     echo "=> Uploading to ${backend}"
-    rclone sync ${BORG_REPO_NAME} "${backend}":backup/
+    rclone sync ${BORG_REPO_LOCATION} "${backend}":backup/
     echo
 done <<< "${RCLONE_BACKENDS}"
 
