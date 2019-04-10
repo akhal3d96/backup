@@ -1,0 +1,22 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: debian:stretch
+
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: apt-get install -y borgbackup rclone
+      - run:
+          name: Test install script
+          command: bash -x install -a
+
+      - run:
+          name: Test backup script 
+          command: bash -x backup
+      
+      - run:
+          name: Test sh compatibility
+          command: sh -n backup install uninstall
