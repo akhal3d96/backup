@@ -34,11 +34,37 @@ else
     CONFIG_DIR="${HOME}/.config/backup"
 fi
 
-BORG_FILES=()
-while read -r file; do
-    BORG_FILES+=( "$file")
-done <<< $(cat $CONFIG_DIR/backuprc | sed 's/[[:space:]]*$//')
+BORG_FILES=$(perl - <<'__HERE__'
+use warnings;
+use Cwd;
+use File::Globstar qw(globstar); 
 
+chdir("$ENV{HOME}");
+
+my @backup_files;
+
+open(my $line, "<","$ENV{HOME}/.config/backup/backuprc");
+while (my $l = <$line> ) {
+    chomp $l;
+    if (index($l,'*') != -1) {
+        push(@backup_files, globstar($l));
+    } elsif ($l =~ / /) {
+        push(@backup_files,"'$l'")
+    } else {
+        push(@backup_files, "$l\n");
+    }
+}
+@backup_files = grep(s/\s*$//g, @backup_files);
+map { s/(^.*\s.*$)/'$1'/g; } @backup_files;
+print "@backup_files\n";
+__HERE__
+)
+BORG_FILES=$(echo $BORG_FILES | sed "s/''//g")
+
+# BORG_FILES=()
+# while read -r file; do
+#     BORG_FILES+=( $"$file")
+# done <<< $(cat $CONFIG_DIR/backuprc | sed 's/[[:space:]]*$//')
 
 
 # Backups name pattern
@@ -52,10 +78,14 @@ RCLONE_BACKENDS="$(rclone config show | grep -E "^\[.+\]" | tr -d '[]')"
 
 
 echo "=> Starting backup"
-BORG_UNKNOWN_UNENCRYPTED_BORG_REPO_NAME_ACCESS_IS_OK=yes borg create --stats \
+BORG_EXEC=$(cat << EOF
+            BORG_UNKNOWN_UNENCRYPTED_BORG_REPO_NAME_ACCESS_IS_OK=yes borg create --stats \
             --show-rc \
             --compression lz4 \
-            ${BORG_REPO_LOCATION}::${BORG_BACKUP_NAME} "${BORG_FILES[@]}"
+            ${BORG_REPO_LOCATION}::${BORG_BACKUP_NAME} ${BORG_FILES[@]}
+EOF
+)
+eval "$BORG_EXEC"
 echo
 
 echo "=> Pruning repository"
