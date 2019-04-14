@@ -5,8 +5,9 @@ Contributions and suggestions are always welcomed.
 ## Requirements
 1. GNU/Linux
 2. systemd
-3. [borg](https://github.com/borgbackup/borg)
-4. [rclone](https://github.com/ncw/rclone)
+3. Perl
+4. [borg](https://github.com/borgbackup/borg)
+5. [rclone](https://github.com/ncw/rclone)
 ## Usage
 ```bash
 $ git clone https://github.com/nemoload/backup
