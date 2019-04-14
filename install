@@ -11,6 +11,16 @@ change_line () {
     sed -i "/^$1/c\\$2" $3
 }
 
+check_presence () {
+    echo -n "=> Check if $1 exists..."
+    if [ -f "/usr/bin/$1" ]; then
+        echo "Yes"
+    else
+        echo "No"
+        exit -1
+    fi
+}
+
 # prologue
 cp backup backup.default
 
@@ -21,20 +31,33 @@ if [ $? -eq 0 ]; then
     echo "Yes"
 else
     echo "No"
+    exit -1
 fi
 
-echo -n "=> Check if borg exists..."
-if [ -f "/usr/bin/borg" ]; then
+check_presence "borg"
+check_presence "rclone"
+check_presence "perl"
+
+echo -n "=> Check if systemd exists..."
+pidof systemd &> /dev/null
+if [ $? -eq 0 ]; then
     echo "Yes"
 else
     echo "No"
 fi
 
-echo -n "=> Check if rclone exists..."
-if [ -f "/usr/bin/rclone" ]; then
+echo -n "=> Check if File::Globstar perl module exists..."
+perl -MFile::Globstar -e 1 &> /dev/null
+if [ $? -eq 0 ]; then
     echo "Yes"
 else
     echo "No"
+    cat<<<EOF
+    To install it:
+        perl -MCPAN -e shell
+        install File::Globstar
+    EOF
+    exit -1
 fi
 
 # Configure the script settings
