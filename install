@@ -21,6 +21,17 @@ check_presence () {
     fi
 }
 
+# Configure the script settings
+auto=false
+while :; do
+    case $1 in
+        -a|--auto) auto=true                     
+        ;;
+        *) break
+    esac
+    shift
+done
+
 # prologue
 cp backup backup.default
 
@@ -57,19 +68,13 @@ else
         perl -MCPAN -e shell
         install File::Globstar
     EOF
-    exit -1
+    if [ "${auto}" = true ]; then
+        cpan install File::Globstar || perl -MCPAN -e 'install File::Globstar'
+    else
+        exit -1
+    fi
 fi
 
-# Configure the script settings
-auto=false
-while :; do
-    case $1 in
-        -a|--auto) auto=true                     
-        ;;
-        *) break
-    esac
-    shift
-done
 
 if [ "${auto}"  = false ]; then
     # Borg Backup location
