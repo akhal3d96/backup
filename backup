@@ -1,6 +1,5 @@
 #! /usr/bin/bash
 
-set -e
 trap "echo $(date) backup interrupted >&2; exit 2" INT TERM
 cd "${HOME}"
 
@@ -49,22 +48,16 @@ while (my $l = <$line> ) {
     if (index($l,'*') != -1) {
         push(@backup_files, globstar($l));
     } elsif ($l =~ / /) {
+        $l =~ s/^\s+|\s+$//g; 
         push(@backup_files,"'$l'")
     } else {
-        push(@backup_files, "$l\n");
+        push(@backup_files, "$l");
     }
 }
-@backup_files = grep(s/\s*$//g, @backup_files);
 map { s/(^.*\s.*$)/'$1'/g; } @backup_files;
 print "@backup_files\n";
 __HERE__
 )
-BORG_FILES=$(echo $BORG_FILES | sed "s/''//g")
-
-# BORG_FILES=()
-# while read -r file; do
-#     BORG_FILES+=( $"$file")
-# done <<< $(cat $CONFIG_DIR/backuprc | sed 's/[[:space:]]*$//')
 
 
 # Backups name pattern
@@ -86,6 +79,7 @@ BORG_EXEC=$(cat << EOF
 EOF
 )
 eval "$BORG_EXEC"
+BROG_CREATE_RET=$?
 echo
 
 echo "=> Pruning repository"
@@ -93,12 +87,15 @@ borg prune --prefix "$(whoami)@$(hostname)-" \
             --keep-weekly 3 \
             --keep-monthly 6 \
             "${BORG_REPO_LOCATION}"
+BROG_PRUN_RET=$?
 echo
 
 while read -r backend; do
     echo "=> Uploading to ${backend}"
     rclone sync ${BORG_REPO_LOCATION} "${backend}":backup/
+    RCLONE_RET=$?
     echo
 done <<< "${RCLONE_BACKENDS}"
 
 echo "Backup done."
+exit $(( $BROG_CREATE_RET || $BROG_PRUN_RET || $RCLONE_RET ))
