@@ -55,6 +55,7 @@ while (my $l = <$line> ) {
     }
 }
 map { s/(^.*\s.*$)/'$1'/g; } @backup_files;
+map { s/''(.+)''/'$1'/g; } @backup_files;
 print "@backup_files\n";
 __HERE__
 )
