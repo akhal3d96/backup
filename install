@@ -1,6 +1,5 @@
 #! /usr/bin/bash
 
-trap "echo $(date) install interrupted >&2; exit 2" INT TERM
 
 BORG_REPO_LOCATION="$HOME/.backup"
 BIN_PATH=/usr/local/bin/backup
@@ -20,6 +19,13 @@ check_presence () {
         exit -1
     fi
 }
+
+epilogue () {
+    mv backup.default backup
+}
+
+trap "echo $(date) install interrupted >&2; epilogue ;exit 2" INT TERM
+
 
 # Configure the script settings
 auto=false
@@ -135,5 +141,4 @@ echo "=> Enable the backup timer"
 systemctl --user enable backup.timer
 
 
-# epilogue
-mv backup.default backup
+epilogue
